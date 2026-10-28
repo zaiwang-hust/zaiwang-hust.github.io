@@ -21,6 +21,7 @@
 @media(max-width:480px){.header-inner{justify-content:center}.wordmark{display:none}.nav-right{width:100%;justify-content:space-between;gap:12px}.nav-links{gap:20px}.nav-links a{padding:5px 0}.hero{padding-top:36px}h1{font-size:clamp(58px,17vw,76px)}.hero-links{gap:16px}.scene{height:350px}.scene-bottom{bottom:18px;left:10px;right:10px}.scene-controls{gap:6px;width:100%}.scene-controls .icon-button{flex:1;width:0;min-width:0;flex-direction:column;padding:5px 2px;gap:3px;font-size:14px;height:58px;border-radius:12px}.scene-controls svg{width:15px;height:15px}.scene-caption{font-size:14px}.award{display:block;padding:17px 0}.award .result{display:block;margin-top:4px}.footer{gap:12px;font-size:13px}.email-row{gap:12px}.email-row a{font-size:23px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation:none!important;transition:none!important}.js .reveal{opacity:1;transform:none}}.motion-reduced .letter{animation:none}.motion-reduced .reveal{opacity:1;transform:none}
 
+#pointer-fx{position:fixed;inset:0;width:100vw;height:100dvh;pointer-events:none!important;z-index:1000}.footer{flex-wrap:wrap}.fx-toggle{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;padding:7px 12px;border-radius:20px;cursor:pointer}.fx-toggle:hover{color:var(--accent);border-color:var(--accent)}.fx-toggle:disabled{cursor:default}
 </style>
 </head>
 <body>
@@ -36,7 +37,7 @@
 <section class="section wrap" id="about" aria-labelledby="profile-title"><h2 class="section-headline reveal" id="profile-title">About me</h2><div class="about-grid"><div class="profile-content"><p class="bio reveal">I’m Zai Wang, a second-year undergraduate at HUST, enrolled in 2025. I study Data Science and Big Data Technology and am exploring federated learning.</p><div class="honors reveal"><div class="honors-heading"><h3>Awards</h3><p>National competitions · 2026</p></div><article class="award"><h4>Lanqiao Cup</h4><span class="result">National third prize</span></article><article class="award"><h4>CCSP</h4><span class="result">National bronze medal</span></article><article class="award"><h4>Baidu Star</h4><span class="result">National bronze medal</span></article></div></div></div></section>
 <section class="contact wrap" id="contact" aria-labelledby="contact-title"><div class="contact-grid"><div><h2 class="contact-title reveal" id="contact-title">Get in touch</h2><div class="email-row reveal"><a href="mailto:wz_@hust.edu.cn">wz_@hust.edu.cn</a><button id="copy-email" class="icon-button" aria-label="Copy email address" title="Copy email address"><svg><use href="#copy"/></svg></button></div></div></div></section>
 </main>
-<footer class="footer wrap"><span>© <span id="footer-year">2026</span> ZAI WANG</span><a href="#home" class="back">Back to top<svg aria-hidden="true"><use href="#up"/></svg></a></footer>
+<footer class="footer wrap"><span>© <span id="footer-year">2026</span> ZAI WANG</span><button id="effects-toggle" class="fx-toggle" type="button" aria-pressed="true">Effects on</button><a href="#home" class="back">Back to top<svg aria-hidden="true"><use href="#up"/></svg></a></footer>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 <dialog id="immersive-dialog" class="immersive-dialog" aria-label="Immersive Orbit view"></dialog>
 <dialog id="command-dialog" aria-labelledby="command-title"><div class="dialog-head"><h2 id="command-title">Find your way.</h2><button id="close-command" class="icon-button" aria-label="Close quick navigation"><svg><use href="#close"/></svg></button></div><input id="command-search" class="command-search" type="search" placeholder="Search this space…" aria-label="Search page actions" autocomplete="off"><div class="command-list"><button class="command-item" data-action="home">Back to the beginning<kbd>↵</kbd></button><button class="command-item" data-action="research">Research interests<kbd>↵</kbd></button><button class="command-item" data-action="about">Profile & honors<kbd>↵</kbd></button><button class="command-item" data-action="contact">Get in touch<kbd>↵</kbd></button><button class="command-item" data-action="copy">Copy email address<kbd>↵</kbd></button><button class="command-item" data-action="theme">Switch light / dark theme<kbd>↵</kbd></button><button class="command-item" data-action="motion">Pause / resume animation<kbd>↵</kbd></button><p id="command-empty" class="empty" hidden>No matching actions.</p></div><div class="dialog-foot">↑↓ NAVIGATE &nbsp; · &nbsp; ENTER SELECT &nbsp; · &nbsp; ESC CLOSE</div></dialog>
@@ -141,6 +142,118 @@
  dialog.addEventListener('keydown',event=>{const visible=commands.filter(btn=>!btn.hidden);if(!visible.length)return;const index=visible.indexOf(document.activeElement);if(event.key==='ArrowDown'){event.preventDefault();visible[(index+1)%visible.length].focus();}else if(event.key==='ArrowUp'){event.preventDefault();visible[index<=0?visible.length-1:index-1].focus();}else if(event.key==='Enter'&&document.activeElement===search){event.preventDefault();visible[0].click();}});
  document.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){event.preventDefault();dialog.open?dialog.close():openCommands();}});
  addEventListener('pagehide',()=>{cancelAnimationFrame(frame);frame=0;});addEventListener('pageshow',()=>{last=0;updateClock();schedule();});
+})();
+
+(() => {
+ 'use strict';
+ const canvas=document.createElement('canvas');canvas.id='pointer-fx';canvas.setAttribute('aria-hidden','true');document.body.append(canvas);
+ const ctx=canvas.getContext('2d');if(!ctx){canvas.remove();return;}
+ const reduced=matchMedia('(prefers-reduced-motion: reduce)'),toggle=document.getElementById('effects-toggle');
+ let enabled=true;try{enabled=localStorage.getItem('zai-pointer-fx')!=='off';}catch(_){}
+ let width=innerWidth,height=innerHeight,dpr=1,raf=0,lastFrame=0,lastMove=0,lastWheel=0,hover=false;
+ let pointer={x:width/2,y:height/2},drawn={...pointer},trail=[],particles=[],rings=[];
+ const TAU=Math.PI*2,clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+ const dark=()=>document.documentElement.dataset.theme==='dark';
+ const color=(h,a=1)=>`hsla(${h},${dark()?95:78}%,${dark()?69:39}%,${a})`;
+ function active(){return enabled&&!reduced.matches&&!document.hidden;}
+ function schedule(){if(active()&&!raf)raf=requestAnimationFrame(draw);}
+ function clear(){cancelAnimationFrame(raf);raf=0;lastFrame=0;lastMove=0;hover=false;trail=[];particles=[];rings=[];ctx.clearRect(0,0,width,height);}
+ function sync(){toggle.disabled=reduced.matches;toggle.setAttribute('aria-pressed',String(enabled&&!reduced.matches));toggle.textContent=reduced.matches?'Effects reduced':enabled?'Effects on':'Effects off';toggle.title=reduced.matches?'Your system prefers reduced motion':'Toggle pointer and keyboard effects';canvas.hidden=!active();}
+ function resize(){width=innerWidth;height=innerHeight;dpr=Math.min(devicePixelRatio||1,1.5);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);clear();}
+ function ring(x,y,h,style='circle',size=64){rings.push({x,y,h,style,size,born:performance.now(),life:style==='spiral'?1150:850});if(rings.length>16)rings.shift();schedule();}
+ function burst(x,y,h,count=18,angle=null,inward=false){
+  const now=performance.now();
+  for(let i=0;i<count;i++){
+   const a=angle===null?TAU*i/count+Math.random()*.2:angle+(Math.random()-.5)*1.3,speed=45+Math.random()*115;
+   const radius=inward?34+Math.random()*34:0;
+   particles.push({x:x+Math.cos(a)*radius,y:y+Math.sin(a)*radius,vx:Math.cos(a)*speed*(inward?-.7:1),vy:Math.sin(a)*speed*(inward?-.7:1),h:h+i*4,size:1.2+Math.random()*1.8,born:now,life:450+Math.random()*450,star:i%4===0});
+  }
+  if(particles.length>150)particles.splice(0,particles.length-150);schedule();
+ }
+ function draw(now){
+  raf=0;if(!active()){clear();return;}
+  const dt=lastFrame?Math.min((now-lastFrame)/1000,.04):.016;lastFrame=now;ctx.clearRect(0,0,width,height);
+  const night=dark();ctx.globalCompositeOperation=night?'lighter':'source-over';
+  if(hover&&now-lastMove<90){
+   const dx=pointer.x-drawn.x,dy=pointer.y-drawn.y,distance=Math.hypot(dx,dy);
+   if(distance>1){
+    const steps=Math.min(10,Math.ceil(distance/8));
+    for(let i=1;i<=steps;i++)trail.push({x:drawn.x+dx*i/steps,y:drawn.y+dy*i/steps,born:now,h:175+(now/17)%110});
+    if(distance>12)burst(pointer.x,pointer.y,185+(now/23)%100,2,Math.atan2(dy,dx)+Math.PI);
+    drawn={...pointer};
+   }
+  }
+  trail=trail.filter(p=>now-p.born<520).slice(-70);
+  ctx.lineCap='round';ctx.lineJoin='round';
+  for(let i=1;i<trail.length;i++){
+   const p=trail[i],prev=trail[i-1],fade=1-(now-p.born)/520;
+   ctx.strokeStyle=color(p.h,fade*.15);ctx.lineWidth=9*fade;ctx.beginPath();ctx.moveTo(prev.x,prev.y);ctx.lineTo(p.x,p.y);ctx.stroke();
+   ctx.strokeStyle=color(p.h,fade*.8);ctx.lineWidth=2.3*fade;ctx.stroke();
+  }
+  if(hover&&now-lastMove<700){
+   const fade=clamp(1-(now-lastMove)/700,0,1);ctx.strokeStyle=color(190,fade*.65);ctx.lineWidth=1;
+   ctx.beginPath();ctx.arc(pointer.x,pointer.y,8,0,TAU);ctx.stroke();
+  }
+  particles=particles.filter(p=>now-p.born<p.life);
+  for(const p of particles){
+   const fade=1-(now-p.born)/p.life;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=Math.exp(-dt*1.8);p.vy*=Math.exp(-dt*1.8);
+   const r=p.size*fade;ctx.fillStyle=color(p.h,fade*.85);ctx.strokeStyle=color(p.h,fade*.85);ctx.lineWidth=1;
+   ctx.beginPath();ctx.arc(p.x,p.y,r,0,TAU);ctx.fill();
+   if(p.star){ctx.beginPath();ctx.moveTo(p.x-r*3,p.y);ctx.lineTo(p.x+r*3,p.y);ctx.moveTo(p.x,p.y-r*3);ctx.lineTo(p.x,p.y+r*3);ctx.stroke();}
+  }
+  rings=rings.filter(r=>now-r.born<r.life);
+  for(const r of rings){
+   const t=(now-r.born)/r.life,ease=1-Math.pow(1-t,3),fade=Math.pow(1-t,1.7),radius=r.size*(r.style==='inward'?1-ease:.12+.88*ease);
+   ctx.save();ctx.translate(r.x,r.y);ctx.rotate(t*(r.style==='spiral'?3:1));ctx.strokeStyle=color(r.h,fade*.8);ctx.lineWidth=1.5;ctx.beginPath();
+   if(r.style==='spiral'){
+    for(let arm=0;arm<3;arm++){for(let j=0;j<=48;j++){const a=j/48*TAU+arm*TAU/3,rr=radius*j/48;const x=Math.cos(a)*rr,y=Math.sin(a)*rr;j?ctx.lineTo(x,y):ctx.moveTo(x,y);}}
+   }else if(r.style==='diamond'){ctx.moveTo(0,-radius);ctx.lineTo(radius,0);ctx.lineTo(0,radius);ctx.lineTo(-radius,0);ctx.closePath();}
+   else {if(r.style==='orbit')ctx.setLineDash([8,7]);ctx.ellipse(0,0,radius,r.style==='orbit'?radius*.52:radius,0,0,TAU);}
+   ctx.stroke();ctx.setLineDash([]);
+   if(r.style==='orbit'){ctx.rotate(Math.PI/2);ctx.beginPath();ctx.ellipse(0,0,radius,radius*.52,0,0,TAU);ctx.stroke();}
+   ctx.restore();
+  }
+  ctx.globalCompositeOperation='source-over';
+  if(trail.length||particles.length||rings.length||(hover&&now-lastMove<700))schedule();else lastFrame=0;
+ }
+ document.addEventListener('pointermove',event=>{
+  if(!active()||event.pointerType==='touch')return;
+  if(!hover)drawn={x:event.clientX,y:event.clientY};pointer={x:event.clientX,y:event.clientY};hover=true;lastMove=performance.now();schedule();
+ },{passive:true});
+ document.addEventListener('pointerout',event=>{if(!event.relatedTarget){hover=false;schedule();}},{passive:true});
+ document.addEventListener('pointerdown',event=>{
+  if(!active()||event.target.closest('#effects-toggle'))return;
+  const x=event.clientX,y=event.clientY;pointer={x,y};
+  switch(event.button){
+   case 0:burst(x,y,185,event.pointerType==='touch'?8:22);ring(x,y,190,'circle',42);break;
+   case 1:burst(x,y,270,26);ring(x,y,280,'spiral',75);break;
+   case 2:burst(x,y,305,16);ring(x,y,310,'orbit',68);break;
+   default:burst(x,y,205,12,event.button===3?Math.PI:0);ring(x,y,215,'diamond',44);
+  }
+ },{passive:true});
+ document.addEventListener('dblclick',event=>{if(active()&&!event.target.closest('#effects-toggle'))ring(event.clientX,event.clientY,230,'orbit',95);},{passive:true});
+ document.addEventListener('wheel',event=>{
+  const now=performance.now();if(!active()||now-lastWheel<110||event.ctrlKey)return;lastWheel=now;
+  const x=event.clientX,y=event.clientY;burst(x,y,event.deltaY>0?195:255,6,event.deltaY>0?Math.PI/2:-Math.PI/2);ring(x,y,205,'circle',25);
+ },{passive:true});
+ document.addEventListener('keydown',event=>{
+  if(!active()||event.repeat||event.isComposing||event.target.closest('input,textarea,select,[contenteditable]:not([contenteditable="false"])'))return;
+  const focused=document.activeElement,box=focused&&focused!==document.body&&focused!==document.documentElement?focused.getBoundingClientRect():null;
+  const x=box&&box.width?clamp(box.left+box.width/2,20,width-20):pointer.x,y=box&&box.height?clamp(box.top+box.height/2,20,height-20):pointer.y;
+  const arrows={ArrowUp:-Math.PI/2,ArrowDown:Math.PI/2,ArrowLeft:Math.PI,ArrowRight:0};
+  if(event.key in arrows){burst(x,y,190,12,arrows[event.key]);return;}
+  if(event.key==='Escape'||event.key==='Backspace'||event.key==='Delete'){burst(x,y,285,14,null,true);ring(x,y,275,'inward',50);return;}
+  if(['Shift','Control','Alt','Meta','CapsLock'].includes(event.key)){ring(x,y,260,'diamond',26);return;}
+  if(event.key==='Enter'||event.code==='Space'){burst(x,y,190,18);ring(x,y,210,event.key==='Enter'?'orbit':'circle',60);return;}
+  // Key text is never drawn or stored; a small hue variation is enough feedback.
+  burst(x,y,180+((event.code||'Key').length%8)*12,8);ring(x,y,205,'circle',28);
+ });
+ toggle.addEventListener('click',()=>{enabled=!enabled;clear();sync();try{localStorage.setItem('zai-pointer-fx',enabled?'on':'off');}catch(_){}});
+ reduced.addEventListener('change',()=>{clear();sync();});
+ document.addEventListener('visibilitychange',()=>{clear();sync();});addEventListener('blur',clear);addEventListener('pagehide',clear);addEventListener('resize',resize);
+ // A modal lives in the browser's top layer. Keep the transparent effect there too.
+ const dialogs=[...document.querySelectorAll('dialog')];new MutationObserver(()=>{const host=dialogs.find(d=>d.open)||document.body;if(canvas.parentElement!==host){clear();host.append(canvas);}}).observe(document.body,{subtree:true,attributes:true,attributeFilter:['open']});
+ resize();sync();
 })();
 
 </script>
