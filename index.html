@@ -27,7 +27,7 @@
 <main id="main">
 <section class="hero wrap" id="home" aria-labelledby="hero-title"><div class="hero-topline mono"><span class="status"><span class="status-dot" aria-hidden="true"></span>HUST · STUDENT</span><span>A SMALL CORNER OF THE INTERNET</span></div><div class="hero-grid">
 <div class="hero-copy"><p class="hello"><span aria-hidden="true">✳</span>Hello there. I'm</p><h1 id="hero-title"><span>ZAI</span><span class="surname">WANG.</span></h1><p class="hero-description">A student at <strong>Huazhong University<br>of Science and Technology.</strong><br>Welcome to my personal universe.</p><div class="hero-actions"><a class="button primary" href="#contact">Get in touch<svg aria-hidden="true"><use href="#arrow"/></svg></a><a class="button" href="https://github.com/zaiwang-hust" target="_blank" rel="noopener noreferrer">Explore GitHub<svg aria-hidden="true"><use href="#arrow"/></svg></a></div></div>
-<div class="scene" id="universe" role="group" aria-label="Interactive particle sculpture"><span class="corner tl" aria-hidden="true"></span><span class="corner tr" aria-hidden="true"></span><span class="corner bl" aria-hidden="true"></span><span class="corner br" aria-hidden="true"></span><div class="scene-label mono">THE PLAYGROUND<b id="scene-name">01 / ORBITAL STUDY</b></div><span class="scene-number mono" aria-hidden="true">✳ &nbsp; INTERACTIVE</span><canvas id="universe-canvas" tabindex="0" role="img" aria-label="Interactive particle sculpture. Drag horizontally or use arrow keys to rotate. Press 1, 2, or 3 to change shape.">An interactive particle sculpture. Your browser does not support canvas.</canvas><p class="scene-fallback" id="scene-fallback">A small universe, imagined in particles.<br>The interactive preview is unavailable in this browser.</p><div class="scene-bottom mono"><span class="live-label"><span class="status-dot" aria-hidden="true"></span><span id="motion-label">IN MOTION</span></span><span>DRAG TO EXPLORE ↔</span></div><div class="scene-controls"><div class="mode-group" aria-label="Sculpture shape"><button data-mode="0" aria-pressed="true" title="Orbit (1)">Orbit</button><button data-mode="1" aria-pressed="false" title="Wave (2)">Wave</button><button data-mode="2" aria-pressed="false" title="Helix (3)">Helix</button></div><div class="scene-tools"><button class="icon-btn" id="motion-toggle" aria-label="Pause animation" title="Pause / play"><svg><use href="#pause"/></svg></button><button class="icon-btn" id="reset-scene" aria-label="Reset sculpture rotation" title="Reset view"><svg><use href="#reset"/></svg></button><button class="icon-btn" id="save-scene" aria-label="Save sculpture as PNG" title="Save a snapshot"><svg><use href="#save"/></svg></button></div></div></div>
+<div class="scene" id="universe" role="group" aria-label="Interactive particle sculpture"><span class="corner tl" aria-hidden="true"></span><span class="corner tr" aria-hidden="true"></span><span class="corner bl" aria-hidden="true"></span><span class="corner br" aria-hidden="true"></span><div class="scene-label mono">THE PLAYGROUND<b id="scene-name">01 / ORBITAL STUDY</b></div><span class="scene-number mono" aria-hidden="true">✳ &nbsp; INTERACTIVE</span><canvas id="universe-canvas" tabindex="0" role="img" aria-label="Interactive HUST particle sculpture. Drag horizontally or use arrow keys to rotate. Press 1, 2, or 3 to change shape.">An interactive particle sculpture. Your browser does not support canvas.</canvas><p class="scene-fallback" id="scene-fallback">A small universe, imagined in particles.<br>The interactive preview is unavailable in this browser.</p><div class="scene-bottom mono"><span class="live-label"><span class="status-dot" aria-hidden="true"></span><span id="motion-label">IN MOTION</span></span><span>DRAG TO EXPLORE ↔</span></div><div class="scene-controls"><div class="mode-group" aria-label="Sculpture shape"><button data-mode="0" aria-pressed="true" title="Orbit (1)">Orbit</button><button data-mode="1" aria-pressed="false" title="Wave (2)">Wave</button><button data-mode="2" aria-pressed="false" title="Helix (3)">Helix</button></div><div class="scene-tools"><button class="icon-btn" id="motion-toggle" aria-label="Pause animation" title="Pause / play"><svg><use href="#pause"/></svg></button><button class="icon-btn" id="reset-scene" aria-label="Reset sculpture rotation" title="Reset view"><svg><use href="#reset"/></svg></button><button class="icon-btn" id="save-scene" aria-label="Save sculpture as PNG" title="Save a snapshot"><svg><use href="#save"/></svg></button></div></div></div>
 </div><div class="hero-footer mono"><a class="scroll-hint" href="#about"><svg aria-hidden="true"><use href="#down"/></svg>SCROLL TO GET ACQUAINTED</a><span class="coordinates">WUHAN, CHINA / UTC +08:00</span><span>THREE SHAPES. YOUR PERSPECTIVE.</span></div></section>
 <section class="section wrap" id="about" aria-labelledby="about-title"><div class="section-kicker mono reveal">01 / A LITTLE CONTEXT</div><div class="section-heading reveal"><h2 id="about-title">A name.<br>A place. A connection.</h2><p class="section-note">I'm Zai Wang, currently studying at HUST. Here's where you can find me, online and in the world.</p></div><div class="profile-grid">
 <article class="card university reveal"><div class="card-top mono"><span>01 / EDUCATION</span><svg aria-hidden="true"><use href="#school"/></svg></div><div class="hust-word" aria-hidden="true">HUST<span style="color:var(--muted)">.</span></div><h3>Huazhong University of<br>Science and Technology</h3><p class="fine">Current institution · Student<br>Wuhan, China</p></article>
@@ -70,9 +70,66 @@
  function resize(){const box=canvas.getBoundingClientRect();width=box.width;height=box.height;dpr=Math.min(devicePixelRatio||1,1.8);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);schedule();}
  let cy=1,sy=0,cp=1,sp=0;
  function project(x,y,z,scale){const x1=x*cy-z*sy,z1=x*sy+z*cy,y1=y*cp-z1*sp,z2=y*sp+z1*cp,p=3.8/(3.8+z2);return[width/2+x1*scale*p,height/2+y1*scale*p,z2,p];}
+ // A camera-facing orbital title keeps the university name legible as the sculpture turns.
+ function drawHust(scale, blend) {
+   const title='HUST', alpha=.25+.75*blend;
+   const phase=-yaw+Math.sin(yaw)*.16;
+   const anchors=[];
+   for(let i=0;i<title.length;i++) {
+     let x,y,z,right,down=[0,1,0],size;
+     if(mode===0) {
+       const angle=phase+(i-1.5)*.48,radius=1.18;
+       x=Math.sin(angle)*radius;y=.04;z=-Math.cos(angle)*radius;
+       right=[Math.cos(angle),0,Math.sin(angle)];size=.62;
+     } else if(mode===1) {
+       const along=(i-1.5)*.53, wave=Math.sin(along*2.8+time*1.5);
+       const front=-.55;
+       x=along*cy+front*sy;z=-along*sy+front*cy;y=-.23+wave*.12;
+       right=[cy,Math.cos(along*2.8+time*1.5)*.12*2.8,-sy];size=.56;
+     } else {
+       const along=(i-1.5)*.55,angle=phase+Math.sin(along*2.6+time*.35)*.45;
+       x=Math.sin(angle)*.63;y=along;z=-Math.cos(angle)*.63;
+       right=[Math.cos(angle),0,Math.sin(angle)];size=.42;
+     }
+     const p=project(x,y,z,scale),epsilon=.01;
+     const horizontal=project(x+right[0]*epsilon,y+right[1]*epsilon,z+right[2]*epsilon,scale);
+     const vertical=project(x+down[0]*epsilon,y+down[1]*epsilon,z+down[2]*epsilon,scale);
+     anchors.push({letter:title[i],p,horizontal,vertical,size});
+   }
+   ctx.save();ctx.globalAlpha=alpha;
+   if(mode===0) {
+     // The translucent equatorial belt gives the lettering a solid silhouette against the stars.
+     ctx.beginPath();
+     for(let edge=0;edge<2;edge++)for(let j=0;j<=48;j++) {
+       const t=edge?48-j:j,angle=phase+(t/48*2-1)*1.03;
+       const p=project(Math.sin(angle)*1.185,edge?.30:-.25,-Math.cos(angle)*1.185,scale);
+       if(edge===0&&j===0)ctx.moveTo(p[0],p[1]);else ctx.lineTo(p[0],p[1]);
+     }
+     ctx.closePath();ctx.fillStyle=dark?'rgba(12,14,18,.38)':'rgba(242,241,233,.5)';ctx.fill();
+     for(const latitude of [-.25,.30]) {
+       ctx.beginPath();for(let j=0;j<=64;j++){const angle=phase+(j/64*2-1)*1.03,p=project(Math.sin(angle)*1.19,latitude,-Math.cos(angle)*1.19,scale);if(j===0)ctx.moveTo(p[0],p[1]);else ctx.lineTo(p[0],p[1]);}
+       ctx.strokeStyle=dark?'rgba(196,245,120,.28)':'rgba(66,104,33,.3)';ctx.lineWidth=.65;ctx.stroke();
+     }
+   } else if(mode===2) {
+     ctx.beginPath();anchors.forEach((a,i)=>{if(i===0)ctx.moveTo(a.p[0],a.p[1]);else ctx.lineTo(a.p[0],a.p[1]);});ctx.strokeStyle=dark?'rgba(196,245,120,.3)':'rgba(66,104,33,.35)';ctx.lineWidth=1;ctx.stroke();
+   }
+   anchors.forEach(a=>{
+     const factor=a.size/100/.01;
+     ctx.save();ctx.translate(a.p[0],a.p[1]);
+     ctx.transform((a.horizontal[0]-a.p[0])*factor,(a.horizontal[1]-a.p[1])*factor,(a.vertical[0]-a.p[0])*factor,(a.vertical[1]-a.p[1])*factor,0,0);
+     ctx.font='900 100px "Arial Black", Arial, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineJoin='round';
+     // A short extrusion, a dark keyline, then a metallic face: no external font or texture needed.
+     ctx.fillStyle=dark?'#3c5731':'#20301c';
+     for(let depth=7;depth>0;depth--)ctx.fillText(a.letter,depth*.52,depth*.78);
+     ctx.strokeStyle=dark?'#172416':'#f2f1e9';ctx.lineWidth=3.1;ctx.strokeText(a.letter,0,0);
+     const face=ctx.createLinearGradient(0,-44,0,42);
+     face.addColorStop(0,dark?'#ffffff':'#36511e');face.addColorStop(.35,dark?'#edf6db':'#658743');face.addColorStop(.50,dark?'#b2c490':'#28451a');face.addColorStop(.56,dark?'#f4ffdf':'#557d34');face.addColorStop(1,dark?'#c4f578':'#244118');
+     ctx.fillStyle=face;ctx.shadowColor=dark?'rgba(196,245,120,.20)':'transparent';ctx.shadowBlur=10;ctx.fillText(a.letter,0,0);ctx.restore();
+   });ctx.restore();
+ }
  function render(stamp){frame=0;if(!ctx)return;const dt=last?Math.min((stamp-last)/1000,.04):.016;last=stamp;if(playing&&!dragging){time+=dt;yaw+=dt*.095;}if(morph<1)morph=Math.min(1,morph+dt*1.15);const eased=morph*morph*(3-2*morph);for(let k=0;k<current.length;k++)current[k]=from[k]+(shapes[mode][k]-from[k])*eased;cy=Math.cos(yaw);sy=Math.sin(yaw);cp=Math.cos(pitch);sp=Math.sin(pitch);ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,height);const scale=Math.min(width*.33,height*.345),glow=ctx.createRadialGradient(width/2,height/2,0,width/2,height/2,scale*1.6);glow.addColorStop(0,dark?'rgba(139,121,232,.065)':'rgba(107,85,170,.035)');glow.addColorStop(1,'rgba(100,100,100,0)');ctx.fillStyle=glow;ctx.fillRect(0,0,width,height);
  if(mode===0){for(let ring=0;ring<3;ring++){ctx.beginPath();for(let j=0;j<=120;j++){const a=j/120*Math.PI*2,r=1.22+ring*.065,p=project(Math.cos(a)*r,Math.sin(a)*.28+(ring-1)*.09,Math.sin(a)*r,scale);if(j===0)ctx.moveTo(p[0],p[1]);else ctx.lineTo(p[0],p[1]);}ctx.strokeStyle=dark?`rgba(181,164,252,${.19-ring*.045})`:`rgba(104,84,170,${.25-ring*.04})`;ctx.lineWidth=.6;ctx.stroke();}}
- for(let i=0;i<count;i++){const k=i*3,x=current[k],z=current[k+2];let y=current[k+1];if(mode===1)y+=Math.sin(x*3.8+z*3+time*1.5)*.15*eased;const p=project(x,y,z,scale),depth=Math.max(.12,Math.min(1,(1.6-p[2])/2.7)),dot=(.65+depth*.72)*p[3],special=i%13===0;ctx.fillStyle=dark?(special?`rgba(196,245,120,${.3+depth*.7})`:`rgba(${Math.round(160+depth*65)},${Math.round(151+depth*80)},${Math.round(218+depth*32)},${.18+depth*.72})`):(special?`rgba(66,104,33,${.35+depth*.65})`:`rgba(83,76,132,${.2+depth*.7})`);ctx.beginPath();ctx.arc(p[0],p[1],dot,0,Math.PI*2);ctx.fill();}if(playing||morph<1)schedule();else last=0;}
+ for(let i=0;i<count;i++){const k=i*3,x=current[k],z=current[k+2];let y=current[k+1];if(mode===1)y+=Math.sin(x*3.8+z*3+time*1.5)*.15*eased;const p=project(x,y,z,scale),depth=Math.max(.12,Math.min(1,(1.6-p[2])/2.7)),dot=(.65+depth*.72)*p[3],special=i%13===0;ctx.fillStyle=dark?(special?`rgba(196,245,120,${.3+depth*.7})`:`rgba(${Math.round(160+depth*65)},${Math.round(151+depth*80)},${Math.round(218+depth*32)},${.18+depth*.72})`):(special?`rgba(66,104,33,${.35+depth*.65})`:`rgba(83,76,132,${.2+depth*.7})`);ctx.beginPath();ctx.arc(p[0],p[1],dot,0,Math.PI*2);ctx.fill();}drawHust(scale,eased);if(playing||morph<1)schedule();else last=0;}
  canvas.addEventListener('pointerdown',event=>{if(event.button!==0)return;dragging=true;pointerId=event.pointerId;lastX=event.clientX;lastY=event.clientY;canvas.classList.add('dragging');canvas.setPointerCapture(event.pointerId);});canvas.addEventListener('pointermove',event=>{if(!dragging||event.pointerId!==pointerId)return;yaw+=(event.clientX-lastX)*.008;pitch=Math.max(-1.4,Math.min(1.4,pitch+(event.clientY-lastY)*.006));lastX=event.clientX;lastY=event.clientY;schedule();});function endDrag(){dragging=false;pointerId=null;canvas.classList.remove('dragging');schedule();}canvas.addEventListener('pointerup',endDrag);canvas.addEventListener('pointercancel',endDrag);canvas.addEventListener('lostpointercapture',endDrag);
  canvas.addEventListener('keydown',event=>{if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)){event.preventDefault();yaw+=event.key==='ArrowLeft'?-.12:event.key==='ArrowRight'?.12:0;pitch=Math.max(-1.4,Math.min(1.4,pitch+(event.key==='ArrowUp'?-.12:event.key==='ArrowDown'?.12:0)));schedule();}if(event.code==='Space'){event.preventDefault();toggleMotion();}});
  $('save-scene').addEventListener('click',()=>{if(!ctx)return;const output=document.createElement('canvas');output.width=canvas.width;output.height=canvas.height+90*dpr;const o=output.getContext('2d');if(!o)return;o.fillStyle=dark?'#0c0e12':'#f2f1e9';o.fillRect(0,0,output.width,output.height);o.drawImage(canvas,0,0);o.scale(dpr,dpr);o.fillStyle=dark?'#f0f0e9':'#17201c';o.font='16px Arial';o.fillText('Zai Wang / '+['Orbit','Wave','Helix'][mode],24,height+30);o.fillStyle=dark?'#969ba8':'#626b65';o.font='11px Arial';o.fillText('zaiwang-hust.github.io',24,height+54);output.toBlob(blob=>{if(!blob){toast('Snapshot unavailable. Please try again.');return;}const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='zai-wang-'+['orbit','wave','helix'][mode]+'.png';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);toast('Your little universe, saved.');},'image/png');});
